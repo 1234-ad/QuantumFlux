@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastLogin DateTime?
+
+  dashboards Dashboard[]
+  streams    Stream[]
+  widgets    Widget[]
+
+  @@map("users")
+}
+
+model Dashboard {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  layout      Json
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  widgets Widget[]
+
+  @@index([userId])
+  @@map("dashboards")
+}
+
+model Widget {
+  id          String   @id @default(cuid())
+  type        String
+  title       String
+  config      Json
+  position    Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  dashboardId String
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([dashboardId])
+  @@index([userId])
+  @@map("widgets")
+}
+
+model Stream {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  source      String
+  config      Json
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  dataPoints DataPoint[]
+
+  @@index([userId])
+  @@index([isActive])
+  @@map("streams")
+}
+
+model DataPoint {
+  id        String   @id @default(cuid())
+  data      Json
+  timestamp DateTime @default(now())
+
+  streamId String
+  stream   Stream @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  @@index([streamId])
+  @@index([timestamp])
+  @@map("data_points")
+}
